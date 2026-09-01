@@ -1,3 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Survey Reminder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #0078D7;
+            color: white;
+            border: none;
+            padding: 15px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Post-Procedure Survey</h2>
+    <p>Please tap the button below to add a reminder to your calendar for 4 weeks from today to complete your follow-up pain survey.</p>
+    <button onclick="generateAndDownloadICS()">Add to Calendar</button>
+</div>
+
 <script>
     function generateAndDownloadICS() {
         // 1. Define the survey URL and event details
@@ -32,12 +88,10 @@
 
         // 5. Execution based on device
         if (isAndroid) {
-            // ANDROID FIX: Use a direct Google Calendar URL to bypass file permission errors
             const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(eventDescription)}`;
             window.location.href = googleCalUrl;
             
         } else {
-            // iOS and Desktop: Build the .ics file content
             const icsContent = [
                 "BEGIN:VCALENDAR",
                 "VERSION:2.0",
@@ -57,10 +111,8 @@
             ].join("\r\n");
 
             if (isIOS) {
-                // iOS FIX: Use data URI to trigger Apple Calendar
                 window.location.href = "data:text/calendar;charset=utf8," + encodeURIComponent(icsContent);
             } else {
-                // DESKTOP: Standard file download
                 const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
@@ -74,3 +126,6 @@
         }
     }
 </script>
+
+</body>
+</html>
