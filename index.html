@@ -1,62 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Set Survey Reminder</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            padding: 50px 20px;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        .container {
-            background: white;
-            padding: 40px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        h2 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        p {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        /* Changed from a button styling to an anchor link styling */
-        .btn {
-            display: block;
-            background-color: #0078D7;
-            color: white;
-            text-decoration: none;
-            padding: 15px 24px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            box-sizing: border-box;
-            width: 100%;
-            transition: background-color 0.2s;
-        }
-        .btn:hover {
-            background-color: #005a9e;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>Post-Procedure Survey</h2>
-    <p>Please tap the button below to add a reminder to your calendar for 4 weeks from today.</p>
-    <!-- Standard HTML link instead of a JavaScript button -->
-    <a id="cal-link" class="btn" href="#">Add to Calendar</a>
-</div>
-
 <script>
     // 1. URLs and Text
     const surveyUrl = "https://redcap.partners.org/redcap/surveys/?s=ERERRNKHT43FH7HX";
@@ -90,7 +31,7 @@
     const isAndroid = /android/i.test(userAgent);
 
     if (isAndroid) {
-        // Android route
+        // Android route remains exactly the same (Google Calendar web link)
         const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(eventDescription)}`;
         calLink.href = googleCalUrl;
     } else {
@@ -113,12 +54,9 @@
             "END:VCALENDAR"
         ].join("\r\n");
 
-        // Use Base64 encoding to create a secure, native data link for iOS
+        // Encode the file and set it as the direct navigation target.
+        // We explicitly DO NOT use the download attribute here so iOS opens it natively.
         const base64 = btoa(icsContent);
         calLink.href = "data:text/calendar;charset=utf8;base64," + base64;
-        calLink.setAttribute('download', 'survey-reminder.ics');
     }
 </script>
-
-</body>
-</html>
