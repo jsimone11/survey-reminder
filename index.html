@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Survey Reminder</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #0078D7;
+            color: white;
+            border: none;
+            padding: 15px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #005a9e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Post-Procedure Survey</h2>
+    <p>Please tap the button below to add a reminder to your calendar for 4 weeks from today to complete your follow-up pain survey.</p>
+    <button onclick="generateAndDownloadICS()">Add to Calendar</button>
+</div>
+
+<script>
+    function generateAndDownloadICS() {
+        // 1. Define the survey URL and event details
+        const surveyUrl = "https://redcap.link/vcabn4k9";
+        const eventTitle = "Follow-up Pain Survey";
+        const eventDescription = "It has been 4 weeks since your procedure. Please fill out your follow-up pain survey here: " + surveyUrl;
+        
+        // 2. Calculate dates (Current time + 28 days)
+        const now = new Date();
+        const futureDate = new Date(now.getTime() + (28 * 24 * 60 * 60 * 1000));
+        
+        // Create an end time 1 hour after the start time so it displays properly
+        const futureEndDate = new Date(futureDate.getTime() + (1 * 60 * 60 * 1000));
+
+        // 3. Format dates for the .ics standard (YYYYMMDDTHHMMSSZ)
+        function formatICSDate(date) {
+            const pad = n => n < 10 ? '0' + n : n;
+            return date.getUTCFullYear() +
+                   pad(date.getUTCMonth() + 1) +
+                   pad(date.getUTCDate()) + 'T' +
+                   pad(date.getUTCHours()) +
+                   pad(date.getUTCMinutes()) +
+                   pad(date.getUTCSeconds()) + 'Z';
+        }
+
+        const dtStamp = formatICSDate(now);
+        const dtStart = formatICSDate(futureDate);
+        const dtEnd = formatICSDate(futureEndDate);
+
+        // 4. Build the .ics file content string
+        const icsContent = [
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Post-Procedure Reminder//EN",
+            "BEGIN:VEVENT",
+            "UID:" + now.getTime() + "@reminder.local",
+            "DTSTAMP:" + dtStamp,
+            "DTSTART:" + dtStart,
+            "DTEND:" + dtEnd,
+            "SUMMARY:" + eventTitle,
+            "DESCRIPTION:" + eventDescription,
+            "URL:" + surveyUrl,
+            "BEGIN:VALARM",
+            "TRIGGER:-PT0M", // Triggers an alert at the time of the event
+            "ACTION:DISPLAY",
+            "DESCRIPTION:Reminder",
+            "END:VALARM",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        ].join("\r\n");
+
+        // 5. Create the file and trigger the download
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        link.href = url;
+        link.setAttribute('download', 'survey-reminder.ics');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
