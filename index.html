@@ -1,7 +1,7 @@
 <script>
     function generateAndDownloadICS() {
         // 1. Define the survey URL and event details
-        const surveyUrl = "https://www.yoursurvey.com/msk-pain-score";
+        const surveyUrl = "https://redcap.partners.org/redcap/surveys/?s=ERERRNKHT43FH7HX";
         const eventTitle = "Follow-up Pain Survey";
         const eventDescription = "Please fill out your follow-up pain survey here: " + surveyUrl;
         
@@ -10,7 +10,7 @@
         const futureDate = new Date(now.getTime() + (28 * 24 * 60 * 60 * 1000));
         const futureEndDate = new Date(futureDate.getTime() + (1 * 60 * 60 * 1000));
 
-        // 3. Format dates for the .ics standard
+        // 3. Format dates (YYYYMMDDTHHMMSSZ)
         function formatICSDate(date) {
             const pad = n => n < 10 ? '0' + n : n;
             return date.getUTCFullYear() +
@@ -25,41 +25,52 @@
         const dtStart = formatICSDate(futureDate);
         const dtEnd = formatICSDate(futureEndDate);
 
-        // 4. Build the .ics file content string (VALARM block removed for mobile compliance)
-        const icsContent = [
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//Post-Procedure Reminder//EN",
-            "CALSCALE:GREGORIAN",
-            "BEGIN:VEVENT",
-            "UID:" + now.getTime() + "@reminder.local",
-            "DTSTAMP:" + dtStamp,
-            "DTSTART:" + dtStart,
-            "DTEND:" + dtEnd,
-            "SUMMARY:" + eventTitle,
-            "DESCRIPTION:" + eventDescription,
-            "URL:" + surveyUrl,
-            "END:VEVENT",
-            "END:VCALENDAR"
-        ].join("\r\n");
+        // 4. Device Detection
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isAndroid = /android/i.test(userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        // 5. Mobile-friendly delivery logic
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        
-        if (isIOS) {
-            // iOS Safari prefers direct data URIs to trigger Apple Calendar
-            window.location.href = "data:text/calendar;charset=utf8," + encodeURIComponent(icsContent);
+        // 5. Execution based on device
+        if (isAndroid) {
+            // ANDROID FIX: Use a direct Google Calendar URL to bypass file permission errors
+            const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(eventDescription)}`;
+            window.location.href = googleCalUrl;
+            
         } else {
-            // Standard download for Android and Desktop
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'survey-reminder.ics');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // iOS and Desktop: Build the .ics file content
+            const icsContent = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//Post-Procedure Reminder//EN",
+                "CALSCALE:GREGORIAN",
+                "METHOD:PUBLISH",
+                "BEGIN:VEVENT",
+                "UID:" + now.getTime() + "@reminder.local",
+                "DTSTAMP:" + dtStamp,
+                "DTSTART:" + dtStart,
+                "DTEND:" + dtEnd,
+                "SUMMARY:" + eventTitle,
+                "DESCRIPTION:" + eventDescription,
+                "URL:" + surveyUrl,
+                "END:VEVENT",
+                "END:VCALENDAR"
+            ].join("\r\n");
+
+            if (isIOS) {
+                // iOS FIX: Use data URI to trigger Apple Calendar
+                window.location.href = "data:text/calendar;charset=utf8," + encodeURIComponent(icsContent);
+            } else {
+                // DESKTOP: Standard file download
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'survey-reminder.ics');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
         }
     }
 </script>
