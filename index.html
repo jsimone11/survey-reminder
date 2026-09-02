@@ -5,47 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Set Survey Reminder</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            padding: 50px 20px;
-            background-color: #f4f7f6;
-            color: #333;
-        }
-        .container {
-            background: white;
-            padding: 40px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        h2 {
-            margin-top: 0;
-            color: #2c3e50;
-        }
-        p {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 30px;
-        }
-        .btn {
-            display: block;
-            background-color: #0078D7;
-            color: white;
-            text-decoration: none;
-            padding: 15px 24px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            box-sizing: border-box;
-            width: 100%;
-            transition: background-color 0.2s;
-            cursor: pointer;
-        }
-        .btn:hover {
-            background-color: #005a9e;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; text-align: center; padding: 50px 20px; background-color: #f4f7f6; color: #333; }
+        .container { background: white; padding: 40px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+        h2 { margin-top: 0; color: #2c3e50; }
+        p { font-size: 16px; color: #666; margin-bottom: 30px; }
+        .btn { display: block; background-color: #0078D7; color: white; text-decoration: none; padding: 15px 24px; font-size: 18px; font-weight: bold; border-radius: 8px; box-sizing: border-box; width: 100%; transition: background-color 0.2s; cursor: pointer; margin-bottom: 12px; }
+        .btn:hover { background-color: #005a9e; }
+        .btn-apple { background-color: #000000; }
+        .btn-apple:hover { background-color: #333333; }
     </style>
 </head>
 <body>
@@ -53,11 +20,21 @@
 <div class="container">
     <h2>Post-Procedure Survey</h2>
     <p>Please tap the button below to add a reminder to your calendar for 4 weeks from today.</p>
+
+    <!-- Default Button (Used by Android) -->
     <a id="cal-link" class="btn" href="#">Add to Calendar</a>
+
+    <!-- iOS Specific UI (Hidden by default) -->
+    <div id="ios-ui" style="display: none;">
+        <div style="background-color: #fff3cd; border-left: 4px solid #ffecb5; padding: 10px; margin-bottom: 20px; text-align: left; font-size: 14px; color: #856404;">
+            <strong>iPhone Users:</strong> If nothing happens when you tap below, tap the <strong>Safari icon (🧭)</strong> at the bottom right of your screen to open this page in your main browser.
+        </div>
+        <a id="apple-cal-link" class="btn btn-apple" href="#">Add to Apple Calendar</a>
+        <a id="google-cal-link" class="btn" href="#">Add to Google Calendar</a>
+    </div>
 </div>
 
 <script>
-    // Wait for the page to fully load before attaching logic
     document.addEventListener("DOMContentLoaded", function() {
         const surveyUrl = "https://redcap.partners.org/redcap/surveys/?s=ERERRNKHT43FH7HX";
         const eventTitle = "Follow-up Pain Survey";
@@ -69,51 +46,73 @@
 
         function formatICSDate(date) {
             const pad = n => n < 10 ? '0' + n : n;
-            return date.getUTCFullYear() +
-                   pad(date.getUTCMonth() + 1) +
-                   pad(date.getUTCDate()) + 'T' +
-                   pad(date.getUTCHours()) +
-                   pad(date.getUTCMinutes()) +
-                   pad(date.getUTCSeconds()) + 'Z';
+            return date.getUTCFullYear() + pad(date.getUTCMonth() + 1) + pad(date.getUTCDate()) + 'T' + pad(date.getUTCHours()) + pad(date.getUTCMinutes()) + pad(date.getUTCSeconds()) + 'Z';
         }
 
         const dtStamp = formatICSDate(now);
         const dtStart = formatICSDate(futureDate);
         const dtEnd = formatICSDate(futureEndDate);
+        
+        const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(eventDescription)}`;
 
-        const calLink = document.getElementById('cal-link');
         const userAgent = navigator.userAgent || navigator.vendor || window.opera;
         const isAndroid = /android/i.test(userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        const calLink = document.getElementById('cal-link');
 
         if (isAndroid) {
             // Android Fix: Intercept the click and force a direct browser navigation
-            const googleCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${dtStart}/${dtEnd}&details=${encodeURIComponent(eventDescription)}`;
             calLink.onclick = function(e) {
                 e.preventDefault();
                 window.location.href = googleCalUrl;
             };
-        } else {
-            // iOS Fix: Embed the data directly into the href so Safari processes it natively
-            const icsContent = [
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                "PRODID:-//Post-Procedure Reminder//EN",
-                "CALSCALE:GREGORIAN",
-                "METHOD:PUBLISH",
-                "BEGIN:VEVENT",
-                "UID:" + now.getTime() + "@reminder.local",
-                "DTSTAMP:" + dtStamp,
-                "DTSTART:" + dtStart,
-                "DTEND:" + dtEnd,
-                "SUMMARY:" + eventTitle,
-                "DESCRIPTION:" + eventDescription,
-                "URL:" + surveyUrl,
-                "END:VEVENT",
-                "END:VCALENDAR"
-            ].join("\r\n");
+        } else if (isIOS) {
+            // iOS Fix: Reveal dual buttons and breakout instructions
+            calLink.style.display = 'none';
+            document.getElementById('ios-ui').style.display = 'block';
 
-            const base64 = btoa(icsContent);
-            calLink.href = "data:text/calendar;charset=utf8;base64," + base64;
+            document.getElementById('google-cal-link').onclick = function(e) {
+                e.preventDefault();
+                window.location.href = googleCalUrl;
+            };
+
+            document.getElementById('apple-cal-link').onclick = function(e) {
+                e.preventDefault();
+                const icsContent = [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//Post-Procedure Reminder//EN",
+                    "CALSCALE:GREGORIAN",
+                    "METHOD:PUBLISH",
+                    "BEGIN:VEVENT",
+                    "UID:" + now.getTime() + "@reminder.local",
+                    "DTSTAMP:" + dtStamp,
+                    "DTSTART:" + dtStart,
+                    "DTEND:" + dtEnd,
+                    "SUMMARY:" + eventTitle,
+                    "DESCRIPTION:" + eventDescription,
+                    "URL:" + surveyUrl,
+                    "END:VEVENT",
+                    "END:VCALENDAR"
+                ].join("\r\n");
+
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'survey-reminder.ics';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            };
+        } else {
+            // Desktop fallback
+            calLink.onclick = function(e) {
+                e.preventDefault();
+                window.location.href = googleCalUrl;
+            };
         }
     });
 </script>
